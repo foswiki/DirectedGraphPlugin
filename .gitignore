@@ -1,0 +1,9 @@
+*.swp
+igp_*
+DirectedGraphPlugin.md5
+DirectedGraphPlugin.sha1
+DirectedGraphPlugin.tgz
+DirectedGraphPlugin.txt
+DirectedGraphPlugin.zip
+DirectedGraphPlugin_installer
+DirectedGraphPlugin_installer.pl
