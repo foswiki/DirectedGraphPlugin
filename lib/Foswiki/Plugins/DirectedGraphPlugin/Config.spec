@@ -47,4 +47,4 @@ $Foswiki::cfg{Plugins}{DirectedGraphPlugin}{attachPath} = '';
 # If not provided, plugin will use the value of "General Path Settings" {PubUrlPath} for linking to attachments.
 # If the attachPath is not provided, then this parameter will be ignored.
 $Foswiki::cfg{Plugins}{DirectedGraphPlugin}{attachUrlPath} = '';
-
+1;
