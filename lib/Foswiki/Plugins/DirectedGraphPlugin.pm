@@ -1,26 +1,4 @@
-# Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
-#
-# Copyright (C) 2004-2005 Cole Beck, cole.beck@vanderbilt.edu
-# Copyright (C) 2006-2008 TWiki Contributors
-# Copyright (C) 2009-2010 George Clark and other Foswiki Contributors
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details, published at
-# http://www.gnu.org/copyleft/gpl.html
-#
-# =========================
-#
-# This plugin creates a png file by using the graphviz dot command.
-# See http://www.graphviz.org/ for more information.
-# Note that png files created with this plugin can only be deleted manually;
-# it stays there even after the dot tags are removed.
+# See bottom of file for default license and copyright information
 
 package Foswiki::Plugins::DirectedGraphPlugin;
 
@@ -37,8 +15,8 @@ use File::Copy ();    # Used for Foswiki attach API bypass
 
 use Foswiki::Func ();
 
-our $VERSION = '1.13';
-our $RELEASE = '1.13';
+our $VERSION = '1.14';
+our $RELEASE = '1.14';
 
 #
 # # Short description of this plugin
@@ -118,6 +96,8 @@ my $antialiasCmd =
   'convert -density %DENSITY|N% -geometry %GEOMETRY|S% %INFILE|F% %OUTFILE|F%';
 my $identifyCmd = 'identify %INFILE|F%';
 
+my $disable = 0;
+
 # The session variables are used to store the file names and md5hash of the input to the dot command
 #   xxxHashArray{SET} - Set to 1 if the array has been initialized
 #   xxxHashArray{GRNUM} - Counts the unnamed graphs for the page
@@ -150,7 +130,8 @@ sub initPlugin {
           )
         {
             _writeDebug('DirectedGraphPlugin - Disabled  - revision provided');
-            return 0;
+            $disable = 1;
+            return 1;
         }
     }
 
@@ -160,7 +141,8 @@ sub initPlugin {
             {generateDiffAttachments} )
         {
             _writeDebug('DirectedGraphPlugin - Disabled  - diff context');
-            return 0;
+            $disable = 1;
+            return 1;
         }
     }
 
@@ -338,9 +320,10 @@ sub initPlugin {
 sub commonTagsHandler {
 ### my ( $text, $topic, $web ) = @_;   # do not uncomment, use $_[0], $_[1]... instead
 
-    return if $_[3];    # Called in an include; do not process DOT macros
+    return if ($disable);  # Don't render in compare or processing old revisions
+    return if $_[3];       # Called in an include; do not process DOT macros
 
-    $topic = $_[1];     # Can't trust globals
+    $topic = $_[1];        # Can't trust globals
     $web   = $_[2];
 
     #SMELL: topic and web are tainted when using Locale's
@@ -357,7 +340,7 @@ sub commonTagsHandler {
     ( $_[0] =~ s/<DOT(.*?)>(.*?)<\/(DOT)>/&_handleDot($2,$1)/gise );
 
 # $3 will be left set if any matches were found in the topic.  If found, do cleanup processing
-    if ( $3 && ( $3 eq 'dot' ) ) {
+    if ( $3 && ( $3 =~ /^dot$/i ) ) {
         _writeDebug("DirectedGraphPlugin - FOUND MATCH  -  $3");
         wrapupTagsHandler();
     }
@@ -573,7 +556,8 @@ sub _handleDot {
 # as they are include in $attr.
 
     my $hashCode =
-      md5_hex( 'DOT'
+      md5_hex( map { $Foswiki::UNICODE ? Encode::encode( 'utf8', $_ ) : $_ }
+            'DOT'
           . $desc
           . $attr
           . $antialias
@@ -604,7 +588,7 @@ sub _handleDot {
     $vectorFormats .= ' ps'
       if ( ($antialias)
         && !( $vectorFormats =~ m/ps/ )
-        && !( $inlineAttach =~ m/svg/ ) )
+        && !( $inlineAttach  =~ m/svg/ ) )
       ;    # postscript for antialias or as requested
     $vectorFormats .= ' cmapx'
       if ( ($doMap) && !( $vectorFormats =~ m/cmapx/ ) );    # client side map
@@ -945,10 +929,10 @@ s/(<map\ id\=\")(.*?)(\"\ name\=\")(.*?)(\">)/$1$hashCode$3$hashCode$5/g;
         my $srcfb = Foswiki::urlEncode("$loc/$outFilename.$fbtype");
         $returnData .=
           "<img src=\"$srcfb\" type=\"image/$fbtype\" "
-          . $newHashArray{IMAGESIZE}{ $outFilename . $fbtype }
-          ;    #Embedded img tag for fallback
+          . $newHashArray{IMAGESIZE}
+          { $outFilename . $fbtype };    #Embedded img tag for fallback
         $returnData .= " usemap=\"#$hashCode\""
-          if ($doMap);    #Include the image map if required
+          if ($doMap);                   #Include the image map if required
         $returnData .= " alt=\"$outFilename.$inlineAttach diagram\"";
         $returnData .= "> \n";
     }
@@ -1319,3 +1303,36 @@ sub _attachmentExists {
 
 1;
 
+#
+__END__
+Foswiki - The Free and Open Source Wiki, http://foswiki.org/
+
+Copyright (C) 2008-2015 Foswiki Contributors. Foswiki Contributors
+are listed in the AUTHORS file in the root of this distribution.
+NOTE: Please extend that file, not this notice.
+
+Additional copyrights apply to some or all of the code in this
+file as follows:
+
+Copyright (C) 2004-2005 Cole Beck, cole.beck@vanderbilt.edu
+Copyright (C) 2006-2008 TWiki Contributors
+Copyright (C) 2009-2010 George Clark
+
+Copyright (C) 1999-2007 Peter Thoeny, peter@thoeny.org
+and TWiki Contributors. All Rights Reserved. TWiki Contributors
+are listed in the AUTHORS file in the root of this distribution.
+Based on parts of Ward Cunninghams original Wiki and JosWiki.
+Copyright (C) 1998 Markus Peter - SPiN GmbH (warpi@spin.de)
+Some changes by Dave Harris (drh@bhresearch.co.uk) incorporated
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. For
+more details read LICENSE in the root of this distribution.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+As per the GPL, removal of this notice is prohibited.
